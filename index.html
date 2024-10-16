@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nations Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+        }
+        .group-board {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .group {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px;
+            width: 200px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .group h2 {
+            margin-top: 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Nations Game</h1>
+    <div>
+        <label for="numGroups">Enter number of groups (4-10):</label>
+        <input type="number" id="numGroups" min="4" max="10">
+        <button onclick="startGame()">Start Game</button>
+    </div>
+    <div id="gameStatus"></div>
+    <div class="group-board" id="groupBoard"></div>
+
+    <script>
+        let groups = [];
+
+        function startGame() {
+            const numGroups = parseInt(document.getElementById('numGroups').value);
+            if (numGroups < 4 || numGroups > 10) {
+                alert('Please enter a number between 4 and 10');
+                return;
+            }
+
+            groups = [];
+            for (let i = 0; i < numGroups; i++) {
+                let groupName = prompt(`Enter the name for group ${i + 1}`);
+                groups.push({ name: groupName, resources: 0, military: 0, tokens: 0, conquered: false });
+            }
+
+            updateBoard();
+            document.getElementById('gameStatus').innerText = 'Game Started! Make your moves!';
+        }
+
+        function updateBoard() {
+            const board = document.getElementById('groupBoard');
+            board.innerHTML = '';
+            groups.forEach((group, index) => {
+                if (!group.conquered) {
+                    board.innerHTML += `
+                        <div class="group">
+                            <h2>${group.name}</h2>
+                            <p>Resources: ${group.resources}</p>
+                            <p>Military: ${group.military}</p>
+                            <p>Tokens: ${group.tokens}</p>
+                            <button onclick="takeAction(${index})">Take Action</button>
+                        </div>`;
+                } else {
+                    board.innerHTML += `
+                        <div class="group">
+                            <h2>${group.name} (Conquered)</h2>
+                        </div>`;
+                }
+            });
+        }
+
+        function takeAction(groupIndex) {
+            let action = prompt(`Choose action for ${groups[groupIndex].name}:
+                                1. Gather resources 
+                                2. Declare war 
+                                3. Develop military 
+                                4. Ask for peace`);
+
+            handleAction(groupIndex, action);
+        }
+
+        function handleAction(groupIndex, action) {
+            let group = groups[groupIndex];
+
+            switch (action) {
+                case '1':
+                    group.resources += 1;
+                    break;
+                case '2':
+                    declareWar(groupIndex);
+                    break;
+                case '3':
+                    if (group.resources >= 1) {
+                        group.military += 1;
+                        group.resources -= 1;
+                    } else {
+                        alert(`${group.name} doesn't have enough resources`);
+                    }
+                    break;
+                case '4':
+                    alert(`${group.name} is asking for peace.`);
+                    break;
+                default:
+                    alert('Invalid action. Try again.');
+            }
+
+            updateBoard();
+        }
+
+        function declareWar(groupIndex) {
+            let group = groups[groupIndex];
+            let opponentIndex = prompt(`Choose a group to declare war on (1 to ${groups.length}):`) - 1;
+
+            if (groups[opponentIndex].conquered || opponentIndex === groupIndex) {
+                alert('Invalid opponent.');
+                return;
+            }
+
+            let warTokensGroup = prompt(`How many war tokens does ${group.name} want to use?`);
+            let warTokensOpponent = prompt(`How many war tokens does ${groups[opponentIndex].name} want to use?`);
+
+            let groupRoll = Math.floor(Math.random() * 6) + 1 + parseInt(warTokensGroup);
+            let opponentRoll = Math.floor(Math.random() * 6) + 1 + parseInt(warTokensOpponent);
+
+            if (groupRoll > opponentRoll) {
+                alert(`${group.name} wins the war!`);
+                groups[opponentIndex].conquered = true;
+                group.tokens += groups[opponentIndex].tokens;
+            } else {
+                alert(`${groups[opponentIndex].name} wins the war!`);
+                groups[groupIndex].conquered = true;
+                groups[opponentIndex].tokens += group.tokens;
+            }
+
+            updateBoard();
+            checkWinCondition();
+        }
+
+        function checkWinCondition() {
+            let remainingGroups = groups.filter(group => !group.conquered);
+
+            if (remainingGroups.length === 1) {
+                document.getElementById('gameStatus').innerText = `${remainingGroups[0].name} has won the game!`;
+                alert(`${remainingGroups[0].name} has won the game!`);
+            }
+        }
+    </script>
+</body>
+</html>
